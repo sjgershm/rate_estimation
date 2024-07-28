@@ -43,8 +43,8 @@ For example:
 model = RET.model_constructor(beta = 2)
 ```
 The model class has the following methods:
-* predict: estimated reinforcement rate for a stimulus vector. Example: ``` model.predict(x)```
-* CRprob: conditioned response probability for a stimulus vector. Example: ``` model.CRprob(x)```
-* informativeness: estimated informativeness (mean and variance) for a stimulus vector. Example: ```H, V = model.informativeness(x)```
-* run: execute the learning updates for an interval of time. Example: ``` model.run(events, start_time, end_time)```
+* predict: estimated reinforcement rate for a stimulus vector. Example: ```model.predict(x)```
+* CRprob: conditioned response probability for a stimulus vector. Example: ```model.CRprob(x)```
+* informativeness: estimated informativeness (posterior mean H and variance V) for a stimulus vector. Example: ```H, V = model.informativeness(x)```
+* run: execute the learning updates for an interval of time. Example: ```model.run(events, start_time, end_time)```
 
