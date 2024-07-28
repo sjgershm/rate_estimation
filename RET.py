@@ -6,14 +6,14 @@ from scipy import integrate
 # Rate estimation theory model class constructor
 class model_constructor:
     def __init__(self, nStim=2, n0=1, r0=1, beta=1):
-        self.n0 = n0
-        self.r0 = r0
-        self.lambda_hat = np.zeros(nStim) + n0/r0
-        self.N = np.zeros(nStim) + n0
-        self.beta = beta
+        self.n0 = n0                # prior stimulus duration
+        self.r0 = r0                # prior number of reinforcements
+        self.lambda_hat = np.zeros(nStim) + n0/r0   # initial rate estimates
+        self.N = np.zeros(nStim) + n0 # initial stimulus durations
+        self.beta = beta            # decision threshold
         
     def predict(self, x):
-        # Predict US
+        # Predict reinforcement
         return np.dot(x,self.lambda_hat)
     
     def CRprob(self, x):
@@ -31,7 +31,7 @@ class model_constructor:
         return H, V
     
     def run(self, events, t_start, t_end, step_size = 0.5):
-        # Run model over a time range
+        # Run model over a time range. This function breaks the range into a number of 500ms update steps.
         steps = np.arange(t_start, t_end, step_size)
         update = lambda t: self.update(*events(t))
         for i in range(len(steps)-1):
@@ -66,7 +66,7 @@ def generate_events_function(ISI, ITI, lambda_vector=[]):
         x = [1] + stimulus_present
         
         if lambda_vector == []: # delay conditioning
-            if (ISI-0.1) < trial_time < ISI:
+            if (ISI-0.1) < trial_time < ISI:    # allow a small (100ms) window of time for the reinforcement, to accommodate integration error
                 reward = 1
             else:
                 reward = 0
