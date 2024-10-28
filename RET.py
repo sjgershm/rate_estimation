@@ -5,49 +5,40 @@ from scipy import integrate
 
 # Rate estimation theory model class constructor
 class model_constructor:
-    def __init__(self, nStim=2, n0=1, r0=1, beta=1):
+    def __init__(self, nStim=2, n0=1, r0=0.1):
         self.n0 = n0                # prior stimulus duration
         self.r0 = r0                # prior number of reinforcements
-        self.lambda_hat = np.zeros(nStim) + n0/r0   # initial rate estimates
+        self.lambda_hat = np.zeros(nStim) + r0/n0   # initial rate estimates
         self.N = np.zeros(nStim) + n0 # initial stimulus durations
-        self.beta = beta            # decision threshold
         
     def predict(self, x):
         # Predict reinforcement
+        # x - event vector
         return np.dot(x,self.lambda_hat)
     
-    def CRprob(self, x):
-        # Conditioned response probability
-        H, V = self.informativeness(x)
-        return norm.cdf((H-self.beta)/np.sqrt(V))
-    
-    def informativeness(self, x):
-        # Compute informativeness (CS-US mutual info up to a constant)
-        lambda_hat = np.multiply(self.lambda_hat,x[1:])  # select rates for present stimuli
-        R_hat = np.dot(self.N[1:],lambda_hat[1:])
-        R_hat_b = self.N[0]*self.lambda_hat[0]
-        H = psi(R_hat) - psi(R_hat_b) - np.sum(np.log(self.N[1:])) + np.log(self.N[0])
-        V = polygamma(1, R_hat) + polygamma(1, R_hat_b)
-        return H, V
-    
-    def run(self, events, t_start, t_end, step_size = 0.5):
-        # Run model over a time range. This function breaks the range into a number of 500ms update steps.
+    def run(self, events, t_start, t_end, step_size = 0.5, eta = 0.7, limit = 2):
+        # Run model over a time range. This function breaks the range into a series of small update steps.
+        # events - function that takes time as input and returns an event vector (x) and reinforcement (r)
+        # t_start - start time for integration
+        # t_end - end time for integreation
+        # step_size - length of time bin for integration
+        # eta - learning rate parameter
+        # limit - number of function evaluations per integration call
         steps = np.arange(t_start, t_end, step_size)
-        update = lambda t: self.update(*events(t))
+        update = lambda t: self.update(*events(t))      # update function to be integrated across time
         for i in range(len(steps)-1):
-            delta, err = integrate.quad_vec(update, steps[i], steps[i+1], limit=10, quadrature='gk15', epsabs=1e-20, epsrel=1e-05)
-            delta_lambda_hat, delta_N = np.split(delta, 2)
-            self.lambda_hat += delta_lambda_hat
-            self.N += delta_N
+            self.N += step_size*eta     # update counts
+            delta, _ = integrate.quad_vec(update, steps[i], steps[i+1], limit=limit, quadrature='gk15', epsabs=1e-05, epsrel=1e-05)
+            self.lambda_hat += delta    # update rate estimates
+            self.lambda_hat = np.fmax(0.00000001,self.lambda_hat)   # make sure rate estimates are greater than 0
     
     def update(self, x, r):
-        # Update model
-        delta_lambda_hat = np.divide(x,self.N)*(r-self.predict(x))
-        delta_N = x
-        return np.concatenate([delta_lambda_hat, delta_N])
+        # Update rate estimates
+        # x - event vector
+        # r - reinforcement
+        return np.divide(x,self.N)*(r-self.predict(x))
     
-
-# Events function generator for Pavlovian conditioning protocol with Poisson distributions
+# Events function generator for Pavlovian conditioning protocol with Poisson distributions or standard delay conditioning
 def generate_events_function(ISI, ITI, lambda_vector=[]):
     total_trial_time = ISI + ITI
 
