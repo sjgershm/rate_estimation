@@ -37,15 +37,12 @@ You can additionally pass specific parameters as input:
 * nStim: number of stimuli (default: 2)
 * n0: prior stimulus duration (default: 1)
 * r0: prior number of reinforcements (default: 1)
-* beta: decision threshold (default: 1)
 
 For example:
 ```
-model = RET.model_constructor(beta = 2)
+model = RET.model_constructor()
 ```
 The model class has the following methods:
 * predict: estimated reinforcement rate for a stimulus vector. Example: ```model.predict(x)```
-* CRprob: conditioned response probability for a stimulus vector. Example: ```model.CRprob(x)```
-* informativeness: estimated informativeness (posterior mean H and variance V) for a stimulus vector. Example: ```H, V = model.informativeness(x)```
 * run: execute the learning updates for an interval of time. Example: ```model.run(events, start_time, end_time)```
 
